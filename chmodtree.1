@@ -1,0 +1,220 @@
+.\" Manpage for chmodtree
+.TH chmodtree 1 "January 2024" "Version 1.0" "chmodtree Manual"
+.SH NAME
+\fBchmodtree\fP - recursively change the file mode bits of files/directories in a directory tree like \fBchmod\fP(1), using multiple threads.
+.SH SYNOPSIS
+.B chmodtree
+[\fB\-t \fIcount\fR] [\fB\-e \fIdir\fR ... | \fB\-E \fIdir\fR ... | \fB\-Z\fR] [\fB\-x\fR] [\fB\-m \fImaxdepth\fR]
+[\fB\-f \fImode\fR] [\fB\-d \fImode\fR] [\fB\-n\fR] [\fB\-I \fIcount\fR] [\fB\-q\fR | \fB\-Q\fR] [\fB\-X\fR] [\fB\-T\fR] [\fB\-S\fR] [\fB\-V\fR] [\fImode\fR] arg1 [arg2 ...]
+.SH DESCRIPTION
+.B chmodtree
+is a multi-threaded alternative to the standard, single-threaded \fBchmod\fP(1), which is used to recursively change the file mode bits of files/directories in a directory tree. The basic idea is to handle each subdirectory as an independent unit, and feed a number of threads with these units.  Provided the underlying storage system is fast enough, this scheme will speed up recursive \fBchmod\fP(1) considerably. Several options and flags can be used to change the mode of a directory tree in a customized way.
+.SH OPTIONS
+.TP
+.B
+\fB-t \fIcount\fR
+Run up to \fIcount\fP threads in parallel.
+.RS
+.IP \(bu 3
+Must be a non-negative integer between 1 and 512.
+.IP \(bu 3
+Defaults to (virtual) CPU count on host, up to 8.
+.IP \(bu 3
+Note that \fIcount\fP threads will be created in addition to the main thread,
+so the total thread count will be \fIcount+1\fP. The main thread won't do any hard work, and will be mostly idle.
+.RE
+.TP
+.B
+.TP
+\fB-e \fIdir\fR
+Exclude directories matching \fIdir\fP from traversal.
+.RS
+.IP \(bu 3
+Extended regular expressions are supported.
+.IP \(bu 3
+Any number of \fB-e\fP options are supported, up to command line limit.
+.RE
+.TP
+\fB-E \fIdir\fR
+Exclude directory \fIdir\fP from traversal.
+.RS
+.IP \(bu 3
+For simplicity, only exact matches are excluded with this option.
+.IP \(bu 3
+Any number of \fB-E\fP options are supported, up to command line limit.
+.IP \(bu 3
+This options can't be combined with \fB-e\fP.
+.IP \(bu 3
+Hint: Excluding .snapshot is usually desired on (the root of) NFS mounted shares from NAS where visible snapshots are enabled.
+.RE
+.TP
+\fB-Z\fR
+Equivalent to -E.snapshot.
+.RS
+.IP \(bu 3
+Just to save some typing since it is commonly needed on a NAS share.
+.RE
+.TP
+\fB-x\fR
+Only traverse the file system(s) containing the directory/directories specified.
+.RS
+.IP \(bu 3
+This equals the \fB-xdev\fP option to \fBfind\fP(1).
+.RE
+.TP
+\fB-m \fImaxdepth\fR
+Descend at most \fImaxdepth\fP (a positive integer) levels below the start point(s).
+.RS
+.IP \(bu 3
+This equals the \fB-maxdepth\fP option to GNU \fBfind\fP(1).
+.RE
+.TP
+\fB-f \fImode\fR
+Just \fBchmod\fP(1) all types of files without affecting directories.
+.RS
+.IP \(bu 3
+May be combined with \fB-d\fP.
+.RE
+.TP
+\fB-d \fImode\fR
+Just \fBchmod\fP(1) directories without affecting any other file type.
+.RS
+.IP \(bu 3
+May be combined with \fB-f\fP. 
+.RE
+.TP
+\fB-n\fR
+Can be used to dry-run before actually chmod()'ing anything.
+.RS
+.IP \(bu 3
+Files and directories will just be listed on stdout, and WILL NOT be chmod()'ed.
+.RE
+.TP
+\fB-I \fIcount\fR
+Use \fIcount\fR as number of subdirectories in a directory, that should be processed in-line instead of processing them in separate threads.
+.RS
+.IP \(bu 3
+Default is to process up to two subdirectories in a directory in-line.
+.IP \(bu 3
+If there are no more than \fIcount\fP subdirectories, all will be processed in-line.
+.IP \(bu 3
+If there are more than \fIcount\fP subdirectories, say \fIn\fP in total, the first \fIn\fP - \fIcount\fP will be enqueued to avoid thread starvation.
+.IP \(bu 3
+This is a performance option to possibly squeeze out even faster run-times.
+.IP \(bu 3
+Use 0 for processing every subdirectory in a separate thread, and no in-line processing.
+.RE
+.TP
+\fB-q\fR
+Organize the queue of directories as a FIFO which may be faster in some cases (default is LIFO).
+.RS
+.IP \(bu 3
+The speed difference between a LIFO and a FIFO queue is usually small.
+.IP \(bu 3
+Note that this option will use more memory.
+.RE
+.TP
+\fB-Q\fR
+Organize the queue of directories as a list sorted on inode number.
+.RS
+.IP \(bu 3
+Using this option with a file system on a single (or mirrored) spinning disk is recommended.
+.IP \(bu 3
+Using it on a storage array or on SSD or FLASH disk is probably pointless.
+.RE
+.TP
+\fB-X\fR
+May be used to speed up chmodtree'ing eXtremely big directories containing millions of files.
+.RS
+.IP \(bu 3
+This option is probably just useful when the big directories being traversed are cached in memory.
+.IP \(bu 3
+With this option, default maximum number of dirents read in one go is 100000.
+.IP \(bu 3
+Environment variable DIRENTS may be set to override the default.
+.IP \(bu 3
+This option is only supported on Linux and *BSD flavors.
+.RE
+.TP
+\fB-T\fR
+Print the elapsed real time between invocation and termination of the program on stderr, like \fBtime\fP(1).
+.TP
+\fB-S\fR
+Print some stats to stderr when finished.
+.TP
+\fB-V\fR
+Print out version and exit.
+.TP
+\fB-h\fR
+Print this help text.
+.SH USAGE
+.IP \(bu 3
+If no argument is specified, this help text will be printed to stdout.
+.IP \(bu 3
+\fImode\fP may be symbolic or numeric/octal - see chmod(1).
+.IP \(bu 3
+If \fB-f\fP \fImode\fP and/or \fB-d\fP \fImode\fP are specified, another \fImode\fP before \fIarg1\fR [\fIarg2\fR ...] will be interpreted as a directory, which is probably not what is intended.
+.IP \(bu 3
+All arguments (\fIarg1 \fR[\fIarg2\fR ...]) should be directories or symlinks to directories. If some of them are not, they will be excluded, and an error message will be printed for each.
+.IP \(bu 3
+All files and directories below the start point(s) will by default be chmod()'ed in parallel (in addition to the start point(s)). 
+
+.SH SUPPORTED OPERATING- & FILE SYSTEMS
+The program has been tested with start point(s) on these file systems:
+.RS
+.IP \(bu 3
+Linux: ext2, ext3, ext4, xfs, jfs, btrfs, nilfs2, f2fs, zfs, tmpfs reiserfs, hfs plus, minix, bfs, ntfs (fuseblk), vxfs, gpfs
+.IP \(bu 3
+FreeBSD: ufs, zfs, devfs, ms-dos/fat
+.IP \(bu 3
+OpenBSD: ffs
+.IP \(bu 3
+MacOS: apfs
+.IP \(bu 3
+AIX: jfs, jfs2, ahafs
+.IP \(bu 3
+HP-UX: vxfs, hfs
+.IP \(bu 3
+Solaris: zfs, ufs, udfs
+.IP \(bu 3
+All: nfs
+.RS
+.SH EXAMPLES
+.IP \(bu 3
+\fBExample 1\fP:
+Using default number of threads (available CPU cores up to 8), perform a dry-run without actually modifying anything, to preview the files and directories that will be changed without the \fB-n\fP option.
+.RS
+.PP
+chmodtree -n go-rx dir1 dir2 ...
+.RE
+.IP \(bu 3
+\fBExample 2\fP:
+Using 4 threads, change all files to mode 664 and all directories to 755 in directory trees dir1, dir2, ...
+.RS
+.PP
+chmodtree -t4 -f 664 -d 755 dir1 dir2 ...
+.RS
+
+.SH CREDITS
+.IP \(bu 3
+The program contains code inspired by https://github.com/xaionaro/libpftw.
+.IP \(bu 3
+The program makes use of a slightly modified version of setmode.c from NetBSD.
+.RS
+.SH NOTES
+.IP \(bu 3
+Symlinks below the start point(s), pointing to directories, are never 
+followed.
+.IP \(bu 3
+Warning: This program may impose a very high load on your storage systems when utilizing many CPU cores.
+.IP \(bu 3
+The "\fBchmodtree\fP" program comes with ABSOLUTELY NO WARRANTY.
+This is free software, and you are welcome
+to redistribute it under certain conditions.
+See the GNU General Public Licence for details.
+.RS
+.SH SEE ALSO
+\fBchmod\fP(1), \fBtime\fP(1), \fBxargs\fP(1)
+
+.SH AUTHOR
+\fBChmodtree\fP was written by J\[/o]rn I. Viken, jornv@1337.no.

@@ -1,0 +1,25 @@
+#!/bin/ksh
+
+print Creating directory trees .a, .b and .c
+mkdir -p .a/b/c/d/e/f/g/h/i/j
+touch .a/b/c/d/e/f/g/h/i/j/f1
+touch .a/b/c/d/e/f/g/h/i/j/f2
+touch .a/b/c/d/e/f/g/h/i/j/f3
+touch .a/b/c/d/e/f/g/h/i/j/f4
+touch .a/b/c/d/e/f/g/h/i/j/f5
+mkdir -p .a/b/c/d/e/f/g/h/i/j/k
+mkdir -p .a/v/c/d/e/f/g/h/i/j
+touch .a/v/c/d/e/f/g/h/i/j/f1
+touch .a/v/c/d/e/f/g/h/i/j/f2
+touch .a/v/c/d/e/f/g/h/i/j/f3
+touch .a/v/c/d/e/f/g/h/i/j/f4
+touch .a/v/c/d/e/f/g/h/i/j/f5
+mkdir -p .a/v/c/d/e/f/g/h/i/j/k
+mkdir -p .b/b/c/d/e/f/g/h/i/j
+touch .b/b/c/d/e/f/g/h/i/j/f1
+touch .b/b/c/d/e/f/g/h/i/j/f2
+touch .b/b/c/d/e/f/g/h/i/j/f3
+touch .b/b/c/d/e/f/g/h/i/j/f4
+touch .b/b/c/d/e/f/g/h/i/j/f5
+mkdir -p .b/b/c/d/e/f/g/h/i/j/k
+mkdir .c
